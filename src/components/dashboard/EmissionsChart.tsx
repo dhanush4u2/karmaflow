@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { CalendarDays } from "lucide-react"
+import { cn } from "@/lib/utils" // Import a class name utility
 
 const emissionsData = [
   { date: "Jan", emissions: 1200, target: 1300 },
@@ -11,9 +12,16 @@ const emissionsData = [
   { date: "Jun", emissions: 1247, target: 1200 },
 ]
 
-export function EmissionsChart() {
+// 👇 1. Define an interface for the component's props
+interface EmissionsChartProps {
+  className?: string;
+}
+
+// 👇 2. Update the function to accept the props
+export function EmissionsChart({ className }: EmissionsChartProps) {
   return (
-    <Card className="col-span-4">
+    // 👇 3. Apply the passed className and remove the hardcoded `col-span-4`
+    <Card className={cn("shadow-none", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

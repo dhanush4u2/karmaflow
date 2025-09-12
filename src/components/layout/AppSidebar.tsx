@@ -6,12 +6,12 @@ import {
   Settings,
   Leaf,
   Brain,
-  Shield,
   LogOut
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
+import { ComplianceStatus } from "@/hooks/ComplianceStatus" // 👈 1. Import the new component
 
 import {
   Sidebar,
@@ -23,7 +23,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 
 const mainNavItems = [
@@ -39,10 +38,8 @@ const settingsItems = [
 ]
 
 export function AppSidebar() {
-  const { state } = useSidebar()
   const location = useLocation()
   const currentPath = location.pathname
-  const isCollapsed = state === "collapsed"
   const { signOut } = useAuth()
 
   const isActive = (path: string) => currentPath === path
@@ -60,12 +57,16 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Leaf className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="CarbonFlow Logo"
+              className="h-8 w-8 object-contain"
+            />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold text-foreground">Carbon Platform</span>
-            <span className="text-xs text-muted-foreground">Karnataka Industries</span>
+            <span className="text-sm font-semibold text-foreground">CarbonFlow</span>
+            <span className="text-xs text-muted-foreground">Algo Rush</span>
           </div>
         </div>
       </SidebarHeader>
@@ -112,15 +113,8 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className="mt-auto p-4 space-y-4 group-data-[collapsible=icon]:hidden">
-          <div className="rounded-lg bg-success/10 border border-success/20 p-3">
-            <div className="flex items-center gap-2 text-success">
-              <Shield className="h-4 w-4" />
-              <span className="text-xs font-medium">Compliant</span>
-            </div>
-            <p className="text-xs text-success/80 mt-1">
-              All emissions within regulatory limits
-            </p>
-          </div>
+          {/* 👇 2. Replace the hardcoded div with our new dynamic component */}
+          <ComplianceStatus />
           
           <Button 
             variant="ghost" 

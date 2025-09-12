@@ -19,7 +19,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="hover:bg-accent hover:text-accent-foreground transition-smooth" />
                 <div className="hidden sm:block">
-                  <h1 className="text-lg font-semibold text-foreground">Smart Carbon Management</h1>
+                  <h1 className="text-lg font-semibold text-foreground">CarbonFlow - Smart Carbon Credit Management</h1>
                   <p className="text-sm text-muted-foreground">Real-time emissions tracking & trading platform</p>
                 </div>
               </div>

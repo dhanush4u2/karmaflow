@@ -16,7 +16,7 @@ export function Dashboard() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-secondary/90" />
           <div className="relative h-full flex items-center justify-between px-8">
             <div className="text-white">
-              <h1 className="text-3xl font-bold mb-2">Carbon Management Dashboard</h1>
+              <h1 className="text-3xl font-bold mb-2">CarbonFlow - Smart Carbon Credit Manager</h1>
               <p className="text-lg opacity-90">
                 Monitor emissions, trade credits, and stay compliant in real-time
               </p>
