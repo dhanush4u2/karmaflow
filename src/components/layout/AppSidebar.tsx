@@ -45,8 +45,8 @@ export function AppSidebar() {
   
   const getNavClasses = ({ isActive }: { isActive: boolean }) =>
     `${isActive 
-      ? "bg-primary text-primary-foreground font-medium shadow-sm" 
-      : "hover:bg-accent hover:text-accent-foreground"
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     } transition-smooth`
 
   return (
@@ -108,12 +108,12 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className="mt-auto p-4 group-data-[collapsible=icon]:hidden">
-          <div className="rounded-lg bg-success-light p-3">
+          <div className="rounded-lg bg-success/10 border border-success/20 p-3">
             <div className="flex items-center gap-2 text-success">
               <Shield className="h-4 w-4" />
               <span className="text-xs font-medium">Compliant</span>
             </div>
-            <p className="text-xs text-success mt-1">
+            <p className="text-xs text-success/80 mt-1">
               All emissions within regulatory limits
             </p>
           </div>
