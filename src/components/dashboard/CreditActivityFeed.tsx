@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpDown, TrendingUp, TrendingDown, Clock } from "lucide-react"
+import { cn } from "@/lib/utils" // Import a class name utility
 
 interface Activity {
   id: string
@@ -58,21 +59,28 @@ function ActivityIcon({ type }: { type: Activity["type"] }) {
 
 function StatusBadge({ status }: { status: Activity["status"] }) {
   const variants = {
-    completed: "bg-success-light text-success border-success",
-    pending: "bg-warning-light text-warning border-warning",
-    failed: "bg-destructive/10 text-destructive border-destructive"
+    completed: "bg-success/10 text-success border-success/20",
+    pending: "bg-warning/10 text-warning border-warning/20",
+    failed: "bg-destructive/10 text-destructive border-destructive/20"
   }
   
   return (
-    <Badge variant="outline" className={variants[status]}>
+    <Badge variant="outline" className={cn("font-medium", variants[status])}>
       {status}
     </Badge>
   )
 }
 
-export function CreditActivityFeed() {
+// 👇 1. Define an interface for the component's props
+interface CreditActivityFeedProps {
+  className?: string;
+}
+
+// 👇 2. Update the function to accept the props
+export function CreditActivityFeed({ className }: CreditActivityFeedProps) {
   return (
-    <Card className="col-span-3">
+    // 👇 3. Apply the passed className and remove the hardcoded `col-span-3`
+    <Card className={cn("shadow-none", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-primary" />
@@ -85,7 +93,7 @@ export function CreditActivityFeed() {
       <CardContent>
         <div className="space-y-4">
           {activities.map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-smooth">
+            <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors duration-200">
               <div className="flex items-center space-x-4">
                 <div className="p-2 rounded-full bg-accent">
                   <ActivityIcon type={activity.type} />
@@ -103,7 +111,7 @@ export function CreditActivityFeed() {
                     {activity.counterparty && (
                       <>
                         <span>{activity.counterparty}</span>
-                        <span>•</span>
+                        <span className="text-xs">•</span>
                       </>
                     )}
                     <span>{activity.timestamp}</span>
@@ -117,7 +125,7 @@ export function CreditActivityFeed() {
                     <div className="font-medium text-foreground">
                       ₹{activity.price.toLocaleString()}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       per credit
                     </div>
                   </div>

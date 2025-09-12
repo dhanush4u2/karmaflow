@@ -11,6 +11,8 @@ export function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // 👇 1. Corrected the state variable name to camelCase for consistency
+  const [industryName, setIndustryName] = useState('')
   const [loading, setLoading] = useState(false)
   const { user, signUp, signIn } = useAuth()
 
@@ -24,7 +26,8 @@ export function AuthPage() {
 
     try {
       if (isSignUp) {
-        await signUp(email, password)
+        // 👇 2. Pass the correct `industryName` state variable
+        await signUp(email, password, industryName)
       } else {
         await signIn(email, password)
       }
@@ -42,7 +45,7 @@ export function AuthPage() {
               <Leaf className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">CarbonSync</h1>
+              <h1 className="text-2xl font-bold text-foreground">CarbonFlow</h1>
               <p className="text-sm text-muted-foreground">Karnataka Industries</p>
             </div>
           </div>
@@ -65,6 +68,23 @@ export function AuthPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="industry" className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Industry Name
+                  </Label>
+                  <Input
+                    id="industry"
+                    type="text"
+                    placeholder="e.g., Acme Steel Pvt Ltd"
+                    // The `value` and `onChange` now correctly correspond to the `industryName` state
+                    value={industryName}
+                    onChange={(e) => setIndustryName(e.target.value)}
+                    className="transition-colors"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />

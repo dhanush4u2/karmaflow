@@ -35,9 +35,16 @@ export function Dashboard() {
 
       {/* Charts and Activity Grid */}
       <div className="grid gap-6 md:grid-cols-7">
-        <EmissionsChart />
-        <CreditActivityFeed />
-        <AIRecommendations />
+        {/* 👇 Assign column spans to each component. The total should be 7. */}
+        {/* Example: 3 + 2 + 2 = 7 */}
+        <EmissionsChart className="md:col-span-4" />
+        <CreditActivityFeed className="md:col-span-3" />
+      </div>
+
+      {/* AI Recommendations (Row 2, full width) */}
+      {/* Moved AIRecommendations to its own div to span full width below */}
+      <div className="grid gap-6"> {/* Use a simple grid for full width behavior */}
+        <AIRecommendations className="md:col-span-full" /> {/* Or just w-full, or no col-span at all here */}
       </div>
     </div>
   )

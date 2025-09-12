@@ -39,6 +39,7 @@ export function AIAnalysis() {
   const [insights, setInsights] = useState<AIInsight[]>([])
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
+  const [compact, setCompact] = useState(true)
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -223,108 +224,107 @@ export function AIAnalysis() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-5 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">AI-Powered Insights</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-semibold text-foreground">AI-Powered Insights</h1>
+          <p className="text-sm text-muted-foreground">
             Smart recommendations powered by machine learning analysis
           </p>
         </div>
-        <Button 
-          onClick={() => userData && analyzeData(userData)}
-          disabled={analyzing}
-          className="gap-2"
-        >
-          {analyzing ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4" />
-              Re-analyze
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost"
+            size="sm"
+            onClick={() => setCompact((v) => !v)}
+            className="gap-2"
+          >
+            {compact ? 'Expanded view' : 'Compact view'}
+          </Button>
+          <Button 
+            onClick={() => userData && analyzeData(userData)}
+            disabled={analyzing}
+            className="gap-2"
+          >
+            {analyzing ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Re-analyze
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Data Overview */}
       {userData && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Emissions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userData.totalEmissions.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">tCO₂e</p>
+        <div className="grid gap-3 md:grid-cols-3">
+          <Card className="shadow-none">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">Total Emissions</div>
+              <div className="text-xl font-semibold leading-tight">{userData.totalEmissions.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">tCO₂e</span></div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Available Credits</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{userData.availableCredits.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">credits</p>
+          <Card className="shadow-none">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">Available Credits</div>
+              <div className="text-xl font-semibold leading-tight text-success">{userData.availableCredits.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">credits</span></div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Data Sources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{userData.recentLogs.length}</div>
-              <p className="text-xs text-muted-foreground">active sources</p>
+          <Card className="shadow-none">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">Data Sources</div>
+              <div className="text-xl font-semibold leading-tight">{userData.recentLogs.length} <span className="text-xs font-normal text-muted-foreground">active</span></div>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* AI Insights */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid ${compact ? 'gap-4' : 'gap-6'} md:grid-cols-2`}>
         {insights.map((insight, index) => {
           const IconComponent = getCategoryIcon(insight.category)
           return (
-            <Card key={index} className="group hover:shadow-md transition-shadow">
-              <CardHeader>
+            <Card key={index} className="shadow-none">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <IconComponent className="h-5 w-5 text-primary" />
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-md bg-primary/10">
+                      <IconComponent className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">{insight.title}</CardTitle>
+                      <CardTitle className={`${compact ? 'text-sm' : 'text-base'} font-semibold`}>{insight.title}</CardTitle>
                       <Badge 
                         variant="outline" 
-                        className={`${getImpactColor(insight.impact)} text-xs font-medium`}
+                        className={`${getImpactColor(insight.impact)} text-[10px] ${compact ? 'px-1.5 py-0.5' : ''}`}
                       >
                         {insight.impact} impact
                       </Badge>
                     </div>
                   </div>
-                  <Sparkles className="h-4 w-4 text-primary opacity-60" />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground leading-relaxed">
+              <CardContent className={`space-y-3 ${compact ? 'pt-0' : ''}`}>
+                <p className={`${compact ? 'text-sm' : 'text-base'} text-muted-foreground leading-relaxed`}>
                   {insight.description}
                 </p>
-                
-                <div className="p-3 rounded-lg bg-accent/50 border border-accent">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className={`rounded-md ${compact ? 'bg-muted/40' : 'bg-accent/50'} p-3`}>
+                  <div className="flex items-center gap-2 mb-1.5">
                     <Lightbulb className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">Recommendation</span>
                   </div>
-                  <p className="text-sm text-foreground">
+                  <p className={`${compact ? 'text-sm' : 'text-base'} text-foreground`}>
                     {insight.recommendation}
                   </p>
                   {insight.potentialSavings && (
-                    <div className="mt-2 text-xs text-success font-medium">
-                      💡 {insight.potentialSavings}
+                    <div className="mt-1.5 text-xs text-success font-medium">
+                      {insight.potentialSavings}
                     </div>
                   )}
                 </div>

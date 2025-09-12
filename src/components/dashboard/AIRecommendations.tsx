@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Brain, Lightbulb, TrendingDown, Zap, ExternalLink, ArrowRight } from "lucide-react"
+import { Brain, Lightbulb, TrendingDown, Zap, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { cn } from "@/lib/utils"
+import { useNavigate } from "react-router-dom" // 👈 1. Import the useNavigate hook
 
 interface Recommendation {
   id: string
@@ -70,70 +71,66 @@ function CategoryIcon({ category }: { category: Recommendation["category"] }) {
   return <Icon className="h-4 w-4" />
 }
 
-export function AIRecommendations() {
-  const [showAllRecommendations, setShowAllRecommendations] = useState(false)
+export function AIRecommendations({ className }: { className?: string }) {
+  const navigate = useNavigate() // 👈 2. Initialize the hook
 
   const handleLearnMore = (recId: string) => {
-    console.log(`Learning more about recommendation: ${recId}`)
-    // TODO: Navigate to detailed recommendation view
+    console.log(`Navigating to AI Analysis for recommendation: ${recId}`)
+    // 👇 3. Navigate to the '/ai-analysis' route
+    navigate('/ai-analysis')
   }
 
   const handleViewAll = () => {
-    setShowAllRecommendations(true)
-    console.log("Viewing all recommendations")
-    // TODO: Navigate to recommendations page or expand view
+    console.log("Navigating to AI Analysis page")
+    // 👇 4. Also navigate to the '/ai-analysis' route
+    navigate('/ai-analysis')
   }
 
   return (
-    <Card className="col-span-1">
-      <CardHeader className="pb-4">
+    <Card className={cn("shadow-none", className)}>
+      <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Brain className="h-5 w-5 text-primary" />
+          <div className="p-1.5 rounded-md bg-primary/10">
+            <Brain className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <div className="text-base font-semibold">AI Insights</div>
-            <div className="text-sm text-muted-foreground font-normal">Powered by machine learning</div>
+            <div className="text-sm font-semibold">AI Insights</div>
+            <div className="text-xs text-muted-foreground font-normal">Powered by machine learning</div>
           </div>
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs">
           Smart recommendations to reduce your carbon footprint
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2.5">
         {recommendations.map((rec) => (
-          <div key={rec.id} className="group p-4 rounded-lg border border-border/50 hover:border-primary/20 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all duration-200">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="p-1.5 rounded-md bg-accent">
-                  <CategoryIcon category={rec.category} />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground text-sm mb-1">{rec.title}</h4>
+          <div key={rec.id} className="p-3 rounded-md border border-border/50">
+            <div className="flex items-start gap-3 mb-2">
+              <div className="p-1.5 rounded-md bg-accent">
+                <CategoryIcon category={rec.category} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-foreground text-sm">{rec.title}</h4>
+                <div className="mt-1">
                   <ImpactBadge impact={rec.impact} />
                 </div>
               </div>
             </div>
-            
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed pl-9">
+            <p className="text-sm text-muted-foreground mb-3 leading-relaxed pl-9">
               {rec.description}
             </p>
-            
             <div className="flex items-center justify-between pl-9">
-              <div className="flex flex-col">
-                <div className="text-sm">
-                  <span className="text-success font-semibold">{rec.potentialReduction}</span>
-                  <span className="text-muted-foreground text-xs"> potential savings</span>
-                </div>
-                <div className="text-xs text-muted-foreground">annually</div>
+              <div className="text-sm">
+                <span className="text-success font-semibold">{rec.potentialReduction}</span>
+                <span className="text-muted-foreground text-xs ml-1">potential annually</span>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-7 text-xs"
                 onClick={() => handleLearnMore(rec.id)}
               >
-                Learn More
+                Details
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </div>
@@ -142,11 +139,11 @@ export function AIRecommendations() {
         
         <Button 
           variant="outline" 
-          className="w-full mt-4 hover:bg-primary hover:text-primary-foreground"
+          className="w-full mt-2 hover:bg-primary hover:text-primary-foreground"
           onClick={handleViewAll}
         >
           <Brain className="h-4 w-4 mr-2" />
-          View All AI Recommendations
+          View all recommendations
         </Button>
       </CardContent>
     </Card>

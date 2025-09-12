@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, industryName?: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
 }
@@ -27,6 +27,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
+        if (session?.user) {
+          ensureProfileForUser(session.user).catch(() => {})
+        }
       }
     )
 
@@ -35,12 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+      if (session?.user) {
+        ensureProfileForUser(session.user).catch(() => {})
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, industryName?: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`
       
@@ -48,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: industryName ? { industry_name: industryName } : undefined
         }
       })
       
@@ -138,4 +145,31 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+async function ensureProfileForUser(user: User) {
+  try {
+    const { data: existing, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id, industry_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (fetchError) {
+      return
+    }
+
+    const metadataIndustry = (user.user_metadata as any)?.industry_name as string | undefined
+
+    if (!existing) {
+      await supabase.from('profiles').insert({ id: user.id, industry_name: metadataIndustry ?? null })
+      return
+    }
+
+    if (!existing.industry_name && metadataIndustry) {
+      await supabase.from('profiles').update({ industry_name: metadataIndustry }).eq('id', user.id)
+    }
+  } catch {
+    // no-op
+  }
 }
