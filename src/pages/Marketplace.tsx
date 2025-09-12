@@ -1,51 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, TrendingUp, Wallet, Plus, Search } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ShoppingCart, TrendingUp, Wallet, Search } from "lucide-react"
+import { SellCreditsDialog } from "@/components/marketplace/SellCreditsDialog"
+import { useMarketplace } from "@/hooks/useMarketplace"
 
-interface Listing {
-  id: string
-  seller: string
-  quantity: number
-  price: number
-  certification: string
-  location: string
-  vintage: string
-  projectType: string
-}
-
-const marketplaceListings: Listing[] = [
-  {
-    id: "1",
-    seller: "Green Energy Corp",
-    quantity: 500,
-    price: 2340,
-    certification: "VCS",
-    location: "Karnataka",
-    vintage: "2024",
-    projectType: "Solar Farm"
-  },
-  {
-    id: "2", 
-    seller: "EcoTech Industries",
-    quantity: 250,
-    price: 2380,
-    certification: "Gold Standard",
-    location: "Tamil Nadu",
-    vintage: "2024", 
-    projectType: "Wind Energy"
-  },
-  {
-    id: "3",
-    seller: "Renewable Solutions Ltd",
-    quantity: 750,
-    price: 2295,
-    certification: "VCS",
-    location: "Karnataka",
-    vintage: "2023",
-    projectType: "Biogas"
-  }
-]
+// Removed mock listings; using live data from Supabase via useMarketplace
 
 function CertificationBadge({ certification }: { certification: string }) {
   return (
@@ -56,6 +17,7 @@ function CertificationBadge({ certification }: { certification: string }) {
 }
 
 export function Marketplace() {
+  const { listings, userProfile, loading, error, sellCredits, buyCredits } = useMarketplace()
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -70,10 +32,9 @@ export function Marketplace() {
             <Search className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Sell Credits
-          </Button>
+          {userProfile && (
+            <SellCreditsDialog creditBalance={userProfile.available_credits} onSell={sellCredits} loading={loading} />
+          )}
         </div>
       </div>
 
@@ -87,12 +48,21 @@ export function Marketplace() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Your Credit Balance</h3>
-                <p className="text-muted-foreground">Available for trading</p>
+                <p className="text-muted-foreground">{userProfile?.industry_name ?? '—'}</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-foreground">543</div>
-              <div className="text-sm text-muted-foreground">Carbon Credits</div>
+              {loading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-7 w-24" />
+                  <Skeleton className="h-4 w-28 ml-auto" />
+                </div>
+              ) : (
+                <>
+                  <div className="text-3xl font-bold text-foreground">{userProfile?.available_credits ?? 0}</div>
+                  <div className="text-sm text-muted-foreground">Carbon Credits</div>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -156,43 +126,59 @@ export function Marketplace() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {marketplaceListings.map((listing) => (
-              <div key={listing.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-smooth">
-                <div className="flex items-center space-x-4">
+          {error && (
+            <div className="text-sm text-destructive">{error}</div>
+          )}
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="space-y-2 w-1/3">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-9 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : listings.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No open trade listings available</div>
+          ) : (
+            <div className="space-y-4">
+              {listings.map((listing) => (
+                <div key={listing.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-smooth">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{listing.seller}</span>
-                      <CertificationBadge certification={listing.certification} />
+                      <span className="font-medium text-foreground">{listing.industry_name}</span>
+                      <CertificationBadge certification={"VCS"} />
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <span>{listing.projectType}</span>
+                      <span>Created</span>
                       <span>•</span>
-                      <span>{listing.location}</span>
-                      <span>•</span>
-                      <span>Vintage {listing.vintage}</span>
+                      <span>{new Date(listing.created_at).toLocaleString()}</span>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Quantity</div>
-                    <div className="font-medium text-foreground">{listing.quantity} credits</div>
+                  <div className="flex items-center space-x-6">
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground">Quantity</div>
+                      <div className="font-medium text-foreground">{listing.no_of_credits} credits</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground">Price</div>
+                      <div className="font-medium text-foreground">₹{listing.current_market_price.toLocaleString()}</div>
+                    </div>
+                    <Button className="bg-primary hover:bg-primary-hover" onClick={() => buyCredits(listing)} disabled={loading}>
+                      Buy Now
+                    </Button>
                   </div>
-                  
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Price</div>
-                    <div className="font-medium text-foreground">₹{listing.price.toLocaleString()}</div>
-                  </div>
-                  
-                  <Button className="bg-primary hover:bg-primary-hover">
-                    Buy Now
-                  </Button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

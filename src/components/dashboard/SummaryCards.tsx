@@ -1,6 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingDown, TrendingUp, Leaf, DollarSign, CheckCircle, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TrendingDown, TrendingUp, Leaf, DollarSign, CheckCircle, AlertCircle, Shield } from "lucide-react"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { useComplianceStatus } from "@/hooks/useComplianceStatus" // 1. Import the compliance hook
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface MetricCardProps {
@@ -23,7 +24,7 @@ function MetricCard({ title, value, description, trend, trendValue, icon: Icon, 
   const getStatusColor = () => {
     if (status === "success") return "text-success"
     if (status === "warning") return "text-warning"
-    return "text-foreground"
+    return "text-muted-foreground" // Use a muted color for neutral/loading
   }
 
   return (
@@ -34,11 +35,13 @@ function MetricCard({ title, value, description, trend, trendValue, icon: Icon, 
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-foreground">{value}</div>
-        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-          {getTrendIcon()}
-          {trendValue && <span>{trendValue}</span>}
-          <span>{description}</span>
-        </div>
+        <p className="text-xs text-muted-foreground h-4"> {/* Set a fixed height to prevent layout shifts */}
+          <span className="flex items-center space-x-2">
+            {getTrendIcon()}
+            {trendValue && <span>{trendValue}</span>}
+            <span>{description}</span>
+          </span>
+        </p>
       </CardContent>
     </Card>
   )
@@ -46,12 +49,52 @@ function MetricCard({ title, value, description, trend, trendValue, icon: Icon, 
 
 export function SummaryCards() {
   const { metrics, marketData, loading, error } = useDashboardData()
+  const complianceStatus = useComplianceStatus() // 2. Call the hook to get the status
+
+  // 3. Helper function to determine the props for the compliance card
+  const getComplianceCardProps = (): MetricCardProps => {
+    switch (complianceStatus.level) {
+      case 'compliant':
+        return {
+          title: "Compliance Status",
+          value: "Compliant",
+          description: "Within regulatory limits",
+          icon: CheckCircle,
+          status: "success",
+        };
+      case 'warning':
+        return {
+          title: "Compliance Status",
+          value: "At Risk",
+          description: complianceStatus.details,
+          icon: AlertCircle,
+          status: "warning",
+        };
+      case 'danger':
+        return {
+          title: "Compliance Status",
+          value: "Action Required",
+          description: complianceStatus.details,
+          icon: AlertCircle,
+          status: "warning", // Using 'warning' for the red color
+        };
+      case 'loading':
+      default:
+        return {
+          title: "Compliance Status",
+          value: "Checking...",
+          description: "Fetching latest data...",
+          icon: Shield,
+          status: "neutral",
+        };
+    }
+  };
 
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="transition-smooth">
+          <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-4" />
@@ -81,11 +124,9 @@ export function SummaryCards() {
     )
   }
 
-  // Calculate trends (placeholder logic - in real app you'd compare with previous periods)
   const emissionsTrend = metrics?.last_month_ghg_emissions && metrics?.total_ghg_emissions
     ? ((metrics.total_ghg_emissions - metrics.last_month_ghg_emissions) / metrics.last_month_ghg_emissions * 100)
     : 0
-
   const emissionsTrendFormatted = emissionsTrend > 0 ? `+${emissionsTrend.toFixed(1)}%` : `${emissionsTrend.toFixed(1)}%`
 
   return (
@@ -104,7 +145,6 @@ export function SummaryCards() {
         title="Available Credits"
         value={`${metrics?.available_credits?.toLocaleString() || 0}`}
         description="carbon credits"
-        trend="neutral"
         icon={DollarSign}
         status="success"
       />
@@ -113,18 +153,11 @@ export function SummaryCards() {
         title="Market Price"
         value={`₹${marketData?.market_price_inr?.toLocaleString() || '2,850'}`}
         description="per credit"
-        trend="neutral"
         icon={TrendingUp}
-        status="neutral"
       />
       
-      <MetricCard
-        title="Compliance Status"
-        value="Compliant"
-        description="all requirements met"
-        icon={CheckCircle}
-        status="success"
-      />
+      {/* 4. Use the dynamic props for the compliance card */}
+      <MetricCard {...getComplianceCardProps()} />
     </div>
   )
 }
