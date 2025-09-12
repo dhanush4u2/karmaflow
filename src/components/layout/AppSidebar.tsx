@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { 
   LayoutDashboard, 
   Activity, 
@@ -6,10 +5,13 @@ import {
   FileText, 
   Settings,
   Leaf,
-  TrendingUp,
-  Shield
+  Brain,
+  Shield,
+  LogOut
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/AuthContext"
 
 import {
   Sidebar,
@@ -26,6 +28,7 @@ import {
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "AI Analysis", url: "/ai-analysis", icon: Brain },
   { title: "Emissions Monitoring", url: "/monitoring", icon: Activity },
   { title: "Carbon Marketplace", url: "/marketplace", icon: ShoppingCart },
   { title: "Compliance & Reports", url: "/reporting", icon: FileText },
@@ -40,14 +43,15 @@ export function AppSidebar() {
   const location = useLocation()
   const currentPath = location.pathname
   const isCollapsed = state === "collapsed"
+  const { signOut } = useAuth()
 
   const isActive = (path: string) => currentPath === path
   
   const getNavClasses = ({ isActive }: { isActive: boolean }) =>
     `${isActive 
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
-      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-    } transition-smooth`
+      ? "bg-primary/10 text-primary font-semibold border-l-4 border-primary" 
+      : "hover:bg-accent hover:text-accent-foreground"
+    } transition-all duration-200 rounded-r-lg`
 
   return (
     <Sidebar
@@ -107,7 +111,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 group-data-[collapsible=icon]:hidden">
+        <div className="mt-auto p-4 space-y-4 group-data-[collapsible=icon]:hidden">
           <div className="rounded-lg bg-success/10 border border-success/20 p-3">
             <div className="flex items-center gap-2 text-success">
               <Shield className="h-4 w-4" />
@@ -117,6 +121,15 @@ export function AppSidebar() {
               All emissions within regulatory limits
             </p>
           </div>
+          
+          <Button 
+            variant="ghost" 
+            onClick={signOut}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
         </div>
       </SidebarContent>
     </Sidebar>
