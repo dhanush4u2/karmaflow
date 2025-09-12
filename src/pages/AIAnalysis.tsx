@@ -32,7 +32,7 @@ interface AIInsight {
   potentialSavings?: string
 }
 
-const GEMINI_API_KEY = 'AIzaSyABWdkXtZ7cIaUKC4sPf2a7wS65PNt3ZeY'
+const GEMINI_API_KEY = 'AIzaSyAPSlpF3bNmdCV7Ju7DYQt4CJrqYQ8zxsw'
 
 export function AIAnalysis() {
   const [userData, setUserData] = useState<UserData | null>(null)
