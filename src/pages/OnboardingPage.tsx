@@ -40,7 +40,7 @@ export function OnboardingPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
-            toast({ title: "Authentication Error", description: "You must be logged in.", variant: "destructive" });
+            toast({ title: "Auth Error", variant: "destructive" });
             return;
         }
 
@@ -51,6 +51,8 @@ export function OnboardingPage() {
                 return acc;
             }, {});
 
+            // **THE FIX:** Send a clean, flat object with only the raw data.
+            // All calculations now happen on the backend.
             const { data, error } = await supabase.functions.invoke('calculate-initial-credits', {
                 body: { userId: user.id, ...numericData },
             });
@@ -59,7 +61,7 @@ export function OnboardingPage() {
 
             toast({
                 title: "Onboarding Complete!",
-                description: `Congratulations! You've been credited with ${data.initialCredits} carbon credits.`,
+                description: `You've been credited with ${data.initialCredits} carbon credits.`,
                 duration: 5000,
             });
             navigate('/');
@@ -70,7 +72,7 @@ export function OnboardingPage() {
         }
     };
 
-    const renderStep = () => {
+    const renderStep = () => { /* ... step rendering logic remains the same ... */ 
         switch (step) {
             case 1:
                 return (

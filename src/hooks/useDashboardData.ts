@@ -1,105 +1,90 @@
+// Path: src/hooks/useDashboardData.ts
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/contexts/AuthContext' // Import useAuth to get the user
 
 export interface DashboardMetrics {
-  total_ghg_emissions: number
-  last_month_ghg_emissions: number
-  available_credits: number
+  total_ghg_emissions: number
+  last_month_ghg_emissions: number
+  available_credits: number
 }
 
 export interface MarketData {
-  market_price_inr: number
-  credit_name: string
-}
-
-export interface EmissionLog {
-  emission_value_tco2e: number
-  source: string
-  created_at: string
+  market_price_inr: number
+  credit_name: string
 }
 
 export function useDashboardData() {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-  const [marketData, setMarketData] = useState<MarketData | null>(null)
-  const [recentEmissions, setRecentEmissions] = useState<EmissionLog[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth(); // Get the currently authenticated user
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+  const [marketData, setMarketData] = useState<MarketData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        setLoading(true)
-        setError(null)
+  useEffect(() => {
+    async function fetchDashboardData() {
+      // Don't proceed if the user is not available yet
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser()
+      try {
+        setLoading(true)
+        setError(null)
+
+        // **THE FIX:** Make this hook robust, just like your other hooks.
+        // First, try to fetch the user's existing metrics record.
+        let { data: metricsData, error: metricsError } = await supabase
+          .from('dashboard_metrics')
+          .select('total_ghg_emissions, last_month_ghg_emissions, available_credits')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (metricsError) throw metricsError;
+
+        // If no record exists (which can happen for a brand new user),
+        // create a default one to prevent the UI from showing null/0 incorrectly.
+        if (!metricsData) {
+          const { data: newData, error: insertError } = await supabase
+            .from('dashboard_metrics')
+            .insert({ 
+              id: user.id, 
+              available_credits: 0, 
+              total_ghg_emissions: 0, 
+              last_month_ghg_emissions: 0 
+            })
+            .select('total_ghg_emissions, last_month_ghg_emissions, available_credits')
+            .single();
+          if (insertError) throw insertError;
+          metricsData = newData;
+        }
         
-        if (!user) {
-          setError('User not authenticated')
-          return
-        }
+        setMetrics(metricsData);
 
-        // Fetch dashboard metrics
-        const { data: metricsData, error: metricsError } = await supabase
-          .from('dashboard_metrics')
-          .select('total_ghg_emissions, last_month_ghg_emissions, available_credits')
-          .eq('id', user.id)
-          .single()
+        // Fetch market data (this part remains the same)
+        const { data: marketDataRes, error: marketError } = await supabase
+          .from('market_data')
+          .select('market_price_inr, credit_name')
+          .limit(1)
+          .single()
 
-        if (metricsError) {
-          console.error('Error fetching metrics:', metricsError)
-          setError('Failed to fetch dashboard metrics')
-        } else {
-          setMetrics(metricsData)
-        }
+        if (marketError) {
+          console.warn('Could not fetch market data:', marketError.message)
+        } else {
+          setMarketData(marketDataRes)
+        }
 
-        // Fetch market data
-        const { data: marketDataRes, error: marketError } = await supabase
-          .from('market_data')
-          .select('market_price_inr, credit_name')
-          .single()
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err)
+        setError('Failed to fetch dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-        if (marketError) {
-          console.error('Error fetching market data:', marketError)
-        } else {
-          setMarketData(marketDataRes)
-        }
+    fetchDashboardData()
+  }, [user]) // Re-run the fetch when the user object becomes available
 
-        // Fetch recent emission logs
-        const { data: emissionsData, error: emissionsError } = await supabase
-          .from('emission_monitoring_logs')
-          .select('emission_value_tco2e, source, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5)
-
-        if (emissionsError) {
-          console.error('Error fetching emissions:', emissionsError)
-        } else {
-          setRecentEmissions(emissionsData || [])
-        }
-
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err)
-        setError('Failed to fetch dashboard data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [])
-
-  return {
-    metrics,
-    marketData,
-    recentEmissions,
-    loading,
-    error,
-    refetch: () => {
-      setLoading(true)
-      setError(null)
-      // Re-run the effect
-    }
-  }
+  return { metrics, marketData, loading, error }
 }
