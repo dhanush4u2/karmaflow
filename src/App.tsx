@@ -1,3 +1,4 @@
+// Path: src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,30 +13,17 @@ import { Marketplace } from "./pages/Marketplace";
 import { Reporting } from "./pages/Reporting";
 import { Settings } from "./pages/Settings";
 import { AuthPage } from "./pages/AuthPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-  
-  return user ? <>{children}</> : <Navigate to="/auth" replace />;
-}
-
 function AppRoutes() {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -51,18 +39,21 @@ function AppRoutes() {
   }
 
   return (
-    <AppLayout>
-      <Routes>
+    <Routes>
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      
+      <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/ai-analysis" element={<AIAnalysis />} />
         <Route path="/monitoring" element={<Monitoring />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/reporting" element={<Reporting />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/auth" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppLayout>
+      </Route>
+
+      <Route path="/auth" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

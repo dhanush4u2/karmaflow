@@ -1,3 +1,4 @@
+// Path: src/integrations/supabase/types.ts
 export type Json =
   | string
   | number
@@ -132,6 +133,45 @@ export type Database = {
           },
         ]
       }
+      // --- ADDITION: Define the new onboarding_submissions table ---
+      onboarding_submissions: {
+        Row: {
+          id: number
+          user_id: string
+          submission_data: Json
+          ai_estimated_emissions: number | null
+          ai_allocated_credits: number | null
+          ai_reasoning: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          submission_data: Json
+          ai_estimated_emissions?: number | null
+          ai_allocated_credits?: number | null
+          ai_reasoning?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          submission_data?: Json
+          ai_estimated_emissions?: number | null
+          ai_allocated_credits?: number | null
+          ai_reasoning?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       open_trades: {
         Row: {
           created_at: string
@@ -175,19 +215,25 @@ export type Database = {
           id: string
           industry_name: string | null
           updated_at: string | null
-          wallet_balance: number | null // <-- Added wallet_balance
+          wallet_balance: number | null
+          // --- CHANGE: Add the new column ---
+          onboarding_completed: boolean
         }
         Insert: {
           id: string
           industry_name?: string | null
           updated_at?: string | null
-          wallet_balance?: number | null // <-- Added wallet_balance
+          wallet_balance?: number | null
+          // --- CHANGE: Add the new column ---
+          onboarding_completed?: boolean
         }
         Update: {
           id?: string
           industry_name?: string | null
           updated_at?: string | null
-          wallet_balance?: number | null // <-- Added wallet_balance
+          wallet_balance?: number | null
+          // --- CHANGE: Add the new column ---
+          onboarding_completed?: boolean
         }
         Relationships: [
           {

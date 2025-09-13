@@ -1,22 +1,22 @@
+// Path: supabase/functions/calculate-initial-credits/index.ts
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
-// Interface for the detailed data coming from the multi-step form
 interface OnboardingData {
   userId: string;
-  electricityUsageKwh: number;
-  fuelConsumptionLiters: number;
-  waterUsageKl: number;
-  wasteGeneratedTons: number;
-  rawMaterialsDetails: string;
-  employeeTravelKm: number;
-  productionOutputDetails: string;
+  electricityKwh: number;
+  fuelLiters: number;
+  waterLiters: number;
+  wasteKg: number;
+  rawMaterialTons: number;
+  transportKm: number;
+  flightsPerYear: number;
+  productionUnits: number;
 }
 
-// The expected JSON response format from the Gemini API
 interface GeminiResponse {
-  estimatedEmissions: number;
-  initialCredits: number;
+  estimated_emissions_tco2e: number;
+  initial_credits_allocation: number;
   reasoning: string;
 }
 
@@ -33,89 +33,77 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    
+    await supabaseAdmin
+      .from('onboarding_submissions')
+      .insert({
+        user_id: userId,
+        submission_data: consumptionData
+      })
+      .throwOnError();
 
-    // 1. Craft the new, more detailed prompt for the Gemini API
     const prompt = `
       You are an expert carbon footprint analyst for industrial facilities in India. 
       Based on the following average monthly operational data for a new user, your task is to:
-      1. Estimate their total monthly carbon footprint in tCO₂e (tonnes of CO₂ equivalent). Use conservative, region-specific Indian industry emission factors.
-      2. Recommend an initial allocation of carbon credits. This allocation serves as a baseline. Companies with lower initial emissions should be rewarded with a slightly higher credit balance (e.g., 50-100) to encourage their good standing. Companies with higher emissions should receive a lower balance (e.g., 10-40) to incentivize immediate reduction efforts.
-      3. Provide a brief, one-sentence justification for your analysis and credit allocation.
+      1. Estimate their total monthly carbon footprint in tCO₂e. Use conservative, region-specific Indian industry emission factors.
+      2. Recommend an initial allocation of carbon credits as a baseline.
+      3. Provide a brief, one-sentence justification for your analysis.
 
       User's Monthly Data:
-      - Electricity Usage: ${consumptionData.electricityUsageKwh || 0} kWh
-      - Fuel Consumption (Diesel/LPG assumed): ${consumptionData.fuelConsumptionLiters || 0} Liters
-      - Water Usage: ${consumptionData.waterUsageKl || 0} Kiloliters
-      - Solid Waste Generated: ${consumptionData.wasteGeneratedTons || 0} Tons
-      - Key Raw Materials: ${consumptionData.rawMaterialsDetails || 'Not provided'}
-      - Employee Travel / Logistics: ${consumptionData.employeeTravelKm || 0} km
-      - Primary Production Output: ${consumptionData.productionOutputDetails || 'Not provided'}
+      - Electricity Usage: ${consumptionData.electricityKwh || 0} kWh
+      - Fuel Consumption: ${consumptionData.fuelLiters || 0} Liters
+      - Water Usage: ${consumptionData.waterLiters || 0} Liters
+      - Solid Waste Generated: ${consumptionData.wasteKg || 0} kg
+      - Key Raw Materials: ${consumptionData.rawMaterialTons || 0} Tons
+      - Logistics Fleet Travel: ${consumptionData.transportKm || 0} km
+      - Annual Business Flights: ${consumptionData.flightsPerYear || 0}
+      - Primary Production Output: ${consumptionData.productionUnits || 0} units
 
-      Provide your response ONLY in a valid JSON format, with no other text, explanation, or markdown. The JSON object must have exactly these three keys: "estimatedEmissions" (number), "initialCredits" (integer), and "reasoning" (string).
-      Example: {"estimatedEmissions": 75.2, "initialCredits": 60, "reasoning": "The allocation is based on moderate electricity consumption but significant fuel usage, offering a balanced starting point."}
+      Provide your response ONLY in a valid JSON format, with no other text.
+      The JSON object must have three keys: "estimated_emissions_tco2e" (number), "initial_credits_allocation" (integer), and "reasoning" (string).
+      Example: {"estimated_emissions_tco2e": 75.2, "initial_credits_allocation": 60, "reasoning": "Allocation based on moderate electricity consumption and standard industrial benchmarks."}
     `;
 
-    // 2. Call the Gemini API
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) throw new Error("GEMINI_API_KEY is not set.");
+
     const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
-    if (!geminiResponse.ok) {
-      const errorBody = await geminiResponse.text();
-      throw new Error(`Failed to get AI analysis: ${errorBody}`);
-    }
+    if (!geminiResponse.ok) throw new Error("Failed to get AI analysis.");
 
     const result = await geminiResponse.json();
     const generatedText = result.candidates[0].content.parts[0].text;
     const aiData: GeminiResponse = JSON.parse(generatedText.match(/\{[\s\S]*\}/)![0]);
 
-    // 3. Store the raw submission and the AI analysis for auditing
-    await supabaseAdmin
-      .from('onboarding_submissions')
-      .insert({
-        user_id: userId,
-        electricity_usage_kwh: consumptionData.electricityUsageKwh,
-        fuel_consumption_liters: consumptionData.fuelConsumptionLiters,
-        water_usage_kl: consumptionData.waterUsageKl,
-        waste_generated_tons: consumptionData.wasteGeneratedTons,
-        raw_materials_details: consumptionData.rawMaterialsDetails,
-        employee_travel_km: consumptionData.employeeTravelKm,
-        production_output_details: consumptionData.productionOutputDetails,
-        ai_estimated_emissions: aiData.estimatedEmissions,
-        ai_allocated_credits: aiData.initialCredits,
-        ai_reasoning: aiData.reasoning
-      })
-      .throwOnError();
-
-    // 4. Update the user's main metrics table with the initial values
     await supabaseAdmin
       .from('dashboard_metrics')
       .update({ 
-        available_credits: aiData.initialCredits,
-        total_ghg_emissions: aiData.estimatedEmissions,
-        last_month_ghg_emissions: aiData.estimatedEmissions
+        available_credits: aiData.initial_credits_allocation,
+        total_ghg_emissions: aiData.estimated_emissions_tco2e,
+        last_month_ghg_emissions: aiData.estimated_emissions_tco2e
       })
       .eq('id', userId)
       .throwOnError();
 
-    // 5. Mark the user's onboarding as complete in their profile
-    // Note: I'm assuming the column is `onboarding_completed`. Adjust if it is `onboarding_complete` as in your function.
     await supabaseAdmin
       .from('profiles')
-      .update({ onboarding_completed: true }) 
+      .update({ onboarding_completed: true })
       .eq('id', userId)
       .throwOnError();
 
-    return new Response(JSON.stringify({ message: "Onboarding complete!", initialCredits: aiData.initialCredits }), {
+    return new Response(JSON.stringify({ 
+      message: "Onboarding complete!", 
+      initialCredits: aiData.initial_credits_allocation 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error("Critical error in onboarding function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
